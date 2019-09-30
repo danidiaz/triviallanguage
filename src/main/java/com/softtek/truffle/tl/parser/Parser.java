@@ -59,21 +59,11 @@ public final class Parser<T> {
 
 	public final <R> Parser<R> discardAndThen(Parser<R> after) {
 		return this.andThen(x -> after);
-//		return new Parser<R>((cs,offset) -> {
-//			final ParseResult<T> innerResult = innerFunction.apply(cs);
-//			return after.innerFunction.apply(innerResult.leftover);
-//		});
 	}
 
 
 	public final <R> Parser<T> andThenDiscard(Parser<R> after) {
 		return this.andThen(x -> after.discardAndThen(pure(x)));
-//		return new Parser<T>((cs,offset) -> {
-//			final ParseResult<T> innerResult = innerFunction.apply(cs);
-//			final ParseResult<R> resultToDiscard =
-//					after.innerFunction.apply(innerResult.leftover);
-//			return new ParseResult<T>(innerResult.value, resultToDiscard.leftover);
-//		});
 	}
 
 	public final Parser<T> orElse(Parser<T> alternative) {
@@ -85,25 +75,6 @@ public final class Parser<T> {
 			}
 		});
 	}
-
-//	public final Parser<List<T>> some() {
-//		return from((cs,offset) -> {
-//			final List<T> results = new ArrayList<>();
-//			final ParseResult<T> firstResult = innerFunction.apply(cs,offset);
-//			results.add(firstResult.value);
-//			Integer currentOffset = firstResult.newOffset;
-//			try {
-//				while (true) {
-//					final ParseResult<T> currentResult =
-//							innerFunction.apply(cs,currentOffset);
-//					results.add(currentResult.value);
-//					currentOffset = currentResult.newOffset;
-//				}
-//			} catch (ParseException oopsFailedToParseSome) {
-//				return new ParseResult<>(results, currentOffset);
-//			}
-//		});
-//	}
 
 	public final Parser<List<T>> many() {
 		return from((cs,offset) -> {
@@ -121,17 +92,6 @@ public final class Parser<T> {
 			}
 		});
 	}
-
-//	public Parser<Optional<T>> optional() {
-//		return from((cs,offset) -> {
-//			try {
-//				final ParseResult<T> result = innerFunction.apply(cs);
-//				return new ParseResult<>(Optional.of(result.value),result.leftover);
-//			} catch (ParseException oopsCouldNotParseOne) {
-//				return new ParseResult<>(Optional.empty(),cs);
-//			}
-//		});
-//	}
 
 	public Parser<List<T>> sepBy(Parser<Void> separator) {
 		return this.sepBy1(separator).orElse(pure(new ArrayList<>()));
@@ -176,16 +136,6 @@ public final class Parser<T> {
 
 	public Parser<T> surroundedBy(Parser<Void> before, Parser<Void> after) {
 		return before.discardAndThen(this.andThenDiscard(after));
-//		return from((cs,offset) -> {
-//			final CharSequence csBefore = before.innerFunction.apply(cs).leftover;
-//
-//			final ParseResult<T> intermediateResult =
-//					this.innerFunction.apply(csBefore);
-//
-//			final CharSequence csAfter = after.innerFunction.apply(intermediateResult.leftover).leftover;
-//
-//			return new ParseResult<T>(intermediateResult.value, csAfter);
-//		});
 	}
 
 	public static Parser<Void> parseChar(char c) {
