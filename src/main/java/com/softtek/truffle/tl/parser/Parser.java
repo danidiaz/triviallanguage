@@ -12,22 +12,27 @@ import java.util.function.Function;
  */
 public final class Parser<T> {
 
+	@FunctionalInterface
+	public interface ParseFunction<X> {
+		ParseResult<X> apply(CharSequence cs, Integer offset);
+	}
+
 	/**
 	 * <p>{@link Function} that takes as parameters a {@link CharSequence} and an {@link Integer} that
 	 * represents the position within the {@link CharSequence} from which we should start parsing.</p>
 	 */
-	private BiFunction<CharSequence, Integer, ParseResult<T>> innerFunction;
+	private ParseFunction<T> parseFunction;
 
-	public static <T> Parser<T> from(BiFunction<CharSequence, Integer, ParseResult<T>> innerFunction) {
-		return new Parser<T>(innerFunction);
+	private static <T> Parser<T> from(ParseFunction<T> parseFunction) {
+		return new Parser<T>(parseFunction);
 	}
 
-	private Parser(BiFunction<CharSequence, Integer, ParseResult<T>> innerFunction) {
-		this.innerFunction = innerFunction;
+	private Parser(ParseFunction<T> parseFunction) {
+		this.parseFunction = parseFunction;
 	}
 
 	public T parse(CharSequence cs) {
-		return innerFunction.apply(cs,0).value;
+		return parseFunction.apply(cs,0).value;
 	}
 
 	public static Parser<Integer> getCurrentPos() {
@@ -52,8 +57,8 @@ public final class Parser<T> {
 
 	public final <R> Parser<R> andThen(Function<T, Parser<R>> mapper) {
 		return new Parser<R>((cs,offset) -> {
-			final ParseResult<T> innerResult = innerFunction.apply(cs,offset);
-			return mapper.apply(innerResult.value).innerFunction.apply(cs,innerResult.newOffset);
+			final ParseResult<T> innerResult = parseFunction.apply(cs,offset);
+			return mapper.apply(innerResult.value).parseFunction.apply(cs,innerResult.newOffset);
 		});
 	}
 
@@ -69,9 +74,9 @@ public final class Parser<T> {
 	public final Parser<T> orElse(Parser<T> alternative) {
 		return new Parser<T>((cs,offset) -> {
 			try {
-				return innerFunction.apply(cs,offset);
+				return parseFunction.apply(cs,offset);
 			} catch (ParseException oopsFirstBranchFailed) {
-				return alternative.innerFunction.apply(cs,offset);
+				return alternative.parseFunction.apply(cs,offset);
 			}
 		});
 	}
@@ -83,7 +88,7 @@ public final class Parser<T> {
 			try {
 				while (true) {
 					final ParseResult<T> currentResult =
-							innerFunction.apply(cs,currentOffset);
+							parseFunction.apply(cs,currentOffset);
 					results.add(currentResult.value);
 					currentOffset = currentResult.newOffset;
 				}

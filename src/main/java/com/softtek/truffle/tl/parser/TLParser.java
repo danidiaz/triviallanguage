@@ -1,28 +1,13 @@
 package com.softtek.truffle.tl.parser;
 
-import com.softtek.truffle.tl.TLExpressionNode;
-import com.softtek.truffle.tl.TLIntegerLiteralNode;
-import com.softtek.truffle.tl.TLStringLiteralNode;
-import com.softtek.truffle.tl.TLAddNode;
-import com.softtek.truffle.tl.TLFunction;
-import com.softtek.truffle.tl.TLReadArgumentNode;
+import com.softtek.truffle.tl.*;
 
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.softtek.truffle.tl.parser.Parser.parseChar;
-import static com.softtek.truffle.tl.parser.Parser.parseEOF;
-import static com.softtek.truffle.tl.parser.Parser.parseIdentifier;
-import static com.softtek.truffle.tl.parser.Parser.parseKeyword;
-import static com.softtek.truffle.tl.parser.Parser.parseQuotedString;
-import static com.softtek.truffle.tl.parser.Parser.pure;
-import static com.softtek.truffle.tl.parser.Parser.parseInteger;
-import static com.softtek.truffle.tl.parser.Parser.skipBlanks;
-import static com.softtek.truffle.tl.parser.Parser.skipBlanksAndThen;
-import static com.softtek.truffle.tl.parser.Parser.unit;
-import static com.softtek.truffle.tl.parser.Parser.withStartAndEndPos;
+import static com.softtek.truffle.tl.parser.Parser.*;
 
 public class TLParser {
 
@@ -70,10 +55,24 @@ public class TLParser {
 	public static Parser<TLExpressionNode> parseExpression() {
 		final Parser<TLExpressionNode> integerLiteral = withPluses(parseIntegerLiteral());
 		final Parser<TLExpressionNode> stringLiteral = withPluses(parseStringLiteral());
+		final Parser<TLExpressionNode> invocation = withPluses(parseInvocation());
 		final Parser<TLExpressionNode> variableOccurrence = withPluses(parseVariableOccurrence());
 		final Parser<TLExpressionNode> parenthesized = withPluses(parseParenthesizedExpression());
 
-		return integerLiteral.orElse(stringLiteral.orElse(variableOccurrence.orElse(parenthesized)));
+		return integerLiteral.orElse(stringLiteral.orElse(invocation.orElse(variableOccurrence.orElse(parenthesized))));
+	}
+
+	public static Parser<TLExpressionNode> parseInvocation() {
+		return parseIdentifier()
+				.andThen(identifier ->
+						parseExpression()
+								.sepBy(skipBlanksAndThen(parseChar(',')))
+								.surroundedBy(
+										skipBlanksAndThen(parseChar('(')),
+										skipBlanksAndThen(parseChar(')'))
+								)
+								.andThen(arguments -> pure(new TLInvokeNode(null,arguments))) // TODO that null
+				);
 	}
 
 	public static Parser<TLExpressionNode> parseVariableOccurrence() {

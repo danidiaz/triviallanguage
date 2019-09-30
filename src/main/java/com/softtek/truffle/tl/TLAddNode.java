@@ -2,7 +2,7 @@ package com.softtek.truffle.tl;
 
 import java.util.StringJoiner;
 
-public class TLAddNode extends  TLExpressionNode {
+public class TLAddNode extends TLExpressionNode {
 
 	private TLExpressionNode left;
 
