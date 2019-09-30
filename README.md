@@ -7,10 +7,12 @@ It is intended to show the absolute basics of Truffle.
 ## Differences with SimpleLanguage
 
 - Only string and int literals allowed.
-    - No bools, no function literals.
+    - No bools
+    - No function literals.
+    - No nulls.
+- No suport for objects.
 - Sum (+) is the only binary operation (works on both Strings and Ints, like in
   SimpleLanguage).
-- No suport for objects.
 - No suport for local variables other than function arguments.
 - Function definitions are only allowed at the top level.
 - Functions can't be redefined.
@@ -19,4 +21,8 @@ It is intended to show the absolute basics of Truffle.
 - Function bodies can only consist of single expressions.
     - There aren't any statements or looping constructs.
     - We don't have to catch control flow exceptions thrown by return nodes.
-        - There's no need of a [SLFunctionBodyNode](https://github.com/danidiaz/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLFunctionBodyNode.java) analogue for catching [control flow exceptions](https://github.com/danidiaz/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLReturnException.java) 
+        - There's no need of a
+          [SLFunctionBodyNode](https://github.com/danidiaz/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLFunctionBodyNode.java)
+          analogue for catching [control flow
+          exceptions](https://github.com/danidiaz/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLReturnException.java) 
+
