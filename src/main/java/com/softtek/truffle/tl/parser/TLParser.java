@@ -4,7 +4,7 @@ import com.softtek.truffle.tl.TLExpressionNode;
 import com.softtek.truffle.tl.TLIntegerLiteralNode;
 import com.softtek.truffle.tl.TLStringLiteralNode;
 import com.softtek.truffle.tl.TLAddNode;
-import com.softtek.truffle.tl.TLFunctionNode;
+import com.softtek.truffle.tl.TLFunction;
 import com.softtek.truffle.tl.TLReadArgumentNode;
 
 import java.util.Deque;
@@ -26,11 +26,11 @@ import static com.softtek.truffle.tl.parser.Parser.withStartAndEndPos;
 
 public class TLParser {
 
-	public static Parser<List<TLFunctionNode>> parseAllTopLevelFunctions() {
+	public static Parser<List<TLFunction>> parseAllTopLevelFunctions() {
 		return parseTopLevelFunction().many().andThenDiscard(skipBlanks().andThenDiscard(parseEOF()));
 	}
 
-	public static Parser<TLFunctionNode> parseTopLevelFunction() {
+	public static Parser<TLFunction> parseTopLevelFunction() {
 		return withStartAndEndPos(
 						parseKeyword("function")
 								.discardAndThen(parseFunctionName())
@@ -40,7 +40,7 @@ public class TLParser {
 														parseFunctionBody().
 																andThen(body ->
 																		pure((startPos, endPos) ->
-																				new TLFunctionNode(
+																				new TLFunction(
 																						startPos,
 																						endPos,
 																						functionName.toString(),

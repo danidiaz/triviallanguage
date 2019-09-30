@@ -3,7 +3,7 @@ package com.softtek.truffle.tl;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class TLFunctionNode extends TLNode {
+public class TLFunction extends TLNode {
 
 	private final int startPos;
 	private final int endPost;
@@ -12,7 +12,7 @@ public class TLFunctionNode extends TLNode {
 	private final List<String> parameter;
 	private final TLExpressionNode body;
 
-	public TLFunctionNode(int startPos, int endPost, String name, List<String> parameter, TLExpressionNode body) {
+	public TLFunction(int startPos, int endPost, String name, List<String> parameter, TLExpressionNode body) {
 		this.startPos = startPos;
 		this.endPost = endPost;
 		this.name = name;
@@ -22,7 +22,7 @@ public class TLFunctionNode extends TLNode {
 
 	@Override
 	public String toString() {
-		return new StringJoiner(", ", TLFunctionNode.class.getSimpleName() + "[", "]")
+		return new StringJoiner(", ", TLFunction.class.getSimpleName() + "[", "]")
 				.add("startPos=" + startPos)
 				.add("endPost=" + endPost)
 				.add("name='" + name + "'")
