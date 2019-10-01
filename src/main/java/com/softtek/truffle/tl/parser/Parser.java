@@ -1,7 +1,9 @@
 package com.softtek.truffle.tl.parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -12,15 +14,24 @@ import java.util.function.Function;
  */
 public final class Parser<T> {
 
+	/**
+	 * <p>An internal functional interface that receives as arguments values related to the current state of the parse,
+	 * and returns the corresponding {@link ParseResult}</p>.
+	 * @param <X> the type of the parsed result.
+	 */
 	@FunctionalInterface
-	public interface ParseFunction<X> {
-		ParseResult<X> apply(CharSequence cs, Integer offset);
+	private interface ParseFunction<X> {
+		/**
+		 * @param symbols A symbol table in which top-level definitions can be declared. Values are {@link Object}s
+		 *                instead of some generic type because the generic type would complicate the
+		 *                {@link Parser} interface and worsen type inference.
+		 * @param cs A {@link CharSequence} containing the text that must be parsed.
+		 * @param offset The position in the {@link CharSequence} from which to start the parse.
+		 * @return The result of the parse.
+		 */
+		ParseResult<X> apply(Map<String,Object> symbols, CharSequence cs, Integer offset);
 	}
 
-	/**
-	 * <p>{@link Function} that takes as parameters a {@link CharSequence} and an {@link Integer} that
-	 * represents the position within the {@link CharSequence} from which we should start parsing.</p>
-	 */
 	private ParseFunction<T> parseFunction;
 
 	private static <T> Parser<T> from(ParseFunction<T> parseFunction) {
@@ -32,11 +43,44 @@ public final class Parser<T> {
 	}
 
 	public T parse(CharSequence cs) {
-		return parseFunction.apply(cs,0).value;
+		return parseFunction.apply(new HashMap<>(),cs,0).value;
+	}
+
+	public static Parser<Void> putSymbol(CharSequence name, Object value) {
+		return from((symbols,cs,offset) -> {
+			symbols.put(name.toString(),value);
+			return new ParseResult<Void>(null,offset);
+		});
+	}
+
+	/**
+	 * @param name Symbol name.
+	 * @param desiredClass Runtime representation of the expected class of the value.
+	 * @param <T> Expected class of the value.
+	 * @return The symbol's value.
+	 * @throws ParseException If the symbol is not registered or has an incompatible type.
+	 */
+	public static <T> Parser<T> getSymbol(CharSequence name, Class<T> desiredClass) {
+		return from((symbols,cs,offset) -> {
+			final Object value = symbols.get(name.toString());
+			if (value == null) {
+				throw new ParseException(String.format("Could not find symbol %s.", name));
+			}
+			if (!desiredClass.isInstance(value)) {
+				throw new ParseException(String.format("Value belongs to unexpected class %s.", desiredClass));
+			}
+			return new ParseResult<T>(desiredClass.cast(value),offset);
+		});
+	}
+
+	public Parser<T> andThenRegister(Function<T, String> nameGetter) {
+		return this.andThen(result ->
+				putSymbol(nameGetter.apply(result), result)
+						.discardAndThen(pure(result)));
 	}
 
 	public static Parser<Integer> getCurrentPos() {
-		return from((cs,offset) -> new ParseResult<Integer>(offset,offset));
+		return from((symbols,cs,offset) -> new ParseResult<Integer>(offset,offset));
 	}
 
 	public static <R> Parser<R> withStartAndEndPos(Parser<BiFunction<Integer,Integer,R>> wantsPositions) {
@@ -48,7 +92,7 @@ public final class Parser<T> {
 	}
 
 	public static <R> Parser<R> pure(R pureValue) {
-		return from((cs,offset) -> new ParseResult<R>(pureValue, offset));
+		return from((symbols,cs,offset) -> new ParseResult<R>(pureValue, offset));
 	}
 
 	public static Parser<Void> unit() {
@@ -56,9 +100,9 @@ public final class Parser<T> {
 	}
 
 	public final <R> Parser<R> andThen(Function<T, Parser<R>> mapper) {
-		return new Parser<R>((cs,offset) -> {
-			final ParseResult<T> innerResult = parseFunction.apply(cs,offset);
-			return mapper.apply(innerResult.value).parseFunction.apply(cs,innerResult.newOffset);
+		return new Parser<R>((symbols,cs,offset) -> {
+			final ParseResult<T> innerResult = parseFunction.apply(symbols,cs,offset);
+			return mapper.apply(innerResult.value).parseFunction.apply(symbols,cs,innerResult.newOffset);
 		});
 	}
 
@@ -72,23 +116,23 @@ public final class Parser<T> {
 	}
 
 	public final Parser<T> orElse(Parser<T> alternative) {
-		return new Parser<T>((cs,offset) -> {
+		return new Parser<T>((symbols,cs,offset) -> {
 			try {
-				return parseFunction.apply(cs,offset);
+				return parseFunction.apply(symbols,cs,offset);
 			} catch (ParseException oopsFirstBranchFailed) {
-				return alternative.parseFunction.apply(cs,offset);
+				return alternative.parseFunction.apply(symbols,cs,offset);
 			}
 		});
 	}
 
 	public final Parser<List<T>> many() {
-		return from((cs,offset) -> {
+		return from((symbols,cs,offset) -> {
 			final List<T> results = new ArrayList<>();
 			Integer currentOffset = offset;
 			try {
 				while (true) {
 					final ParseResult<T> currentResult =
-							parseFunction.apply(cs,currentOffset);
+							parseFunction.apply(symbols,cs,currentOffset);
 					results.add(currentResult.value);
 					currentOffset = currentResult.newOffset;
 				}
@@ -115,7 +159,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<Void> parseEOF() {
-		return from((cs,offset) -> {
+		return from((symbols,cs,offset) -> {
 			if (cs.length() > offset) {
 				throw new ParseException("expected EOF");
 			}
@@ -124,7 +168,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<Void> skipBlanks() {
-		return from((cs,offset) -> {
+		return from((symbols,cs,offset) -> {
 			int index = offset;
 			for (; index < cs.length(); index++) {
 				if (!Character.isSpaceChar(cs.charAt(index))) {
@@ -144,7 +188,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<Void> parseChar(char c) {
-		return from((cs,offset) -> {
+		return from((symbols,cs,offset) -> {
 			if (cs.length() <= offset) {
 				throw new ParseException("Unexpected EOF");
 			}
@@ -156,7 +200,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<Void> parseKeyword(CharSequence keyword) {
-		return skipBlanksAndThen(from((cs,offset) -> {
+		return skipBlanksAndThen(from((symbols,cs,offset) -> {
 			if (cs.length() - offset < keyword.length()) {
 				throw new ParseException("Could not parse keyword.");
 			}
@@ -172,7 +216,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<CharSequence> parseIdentifier() {
-		return skipBlanksAndThen(from((cs,offset) -> {
+		return skipBlanksAndThen(from((symbols,cs,offset) -> {
 			int index = offset;
 			for (; index < cs.length(); index++) {
 				if (!Character.isLetter(cs.charAt(index))) {
@@ -187,7 +231,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<CharSequence> parseQuotedString() {
-		return skipBlanksAndThen(from((cs,offset) -> {
+		return skipBlanksAndThen(from((symbols,cs,offset) -> {
 			if (cs.length() <= offset) {
 				throw new ParseException("Unexpected EOF");
 			}
@@ -208,7 +252,7 @@ public final class Parser<T> {
 	}
 
 	public static Parser<Integer> parseInteger() {
-		return skipBlanksAndThen(from((cs,offset) -> {
+		return skipBlanksAndThen(from((symbols,cs,offset) -> {
 			int index = offset;
 			for (; index < cs.length(); index++) {
 				if (!Character.isDigit(cs.charAt(index))) {

@@ -12,33 +12,45 @@ import static com.softtek.truffle.tl.parser.Parser.*;
 public class TLParser {
 
 	public static Parser<List<TLFunction>> parseAllTopLevelFunctions() {
-		return parseTopLevelFunction().many().andThenDiscard(skipBlanks().andThenDiscard(parseEOF()));
+		return parseTopLevelFunction()
+				.andThenRegister(TLFunction::getName)
+				.many()
+				.andThenDiscard(skipBlanks().andThenDiscard(parseEOF()));
 	}
 
 	public static Parser<TLFunction> parseTopLevelFunction() {
 		return withStartAndEndPos(
-						parseKeyword("function")
-								.discardAndThen(parseFunctionName())
-								.andThen(functionName ->
-										parseParameterList()
-												.andThen(parameters ->
-														parseFunctionBody().
-																andThen(body ->
-																		pure((startPos, endPos) ->
-																				new TLFunction(
-																						startPos,
-																						endPos,
-																						functionName.toString(),
-																						toStringList(parameters),
-																						body))))));
+				parseKeyword("function")
+						.discardAndThen(parseFunctionName())
+						.andThen(functionName ->
+								parseArgumentList()
+										.andThen(arguments ->
+												parseFunctionBody().
+														andThen(body ->
+																pure((startPos, endPos) ->
+																		new TLFunction(
+																				startPos,
+																				endPos,
+																				functionName.toString(),
+																				toStringList(arguments),
+																				body))))));
 	}
 
 	public static Parser<CharSequence> parseFunctionName() {
 		return parseIdentifier();
 	}
 
-	public static Parser<List<CharSequence>> parseParameterList() {
+	public static Parser<List<CharSequence>> parseArgumentList() {
 		return parseIdentifier()
+				.sepBy(skipBlanksAndThen(parseChar(',')))
+				.surroundedBy(
+						skipBlanksAndThen(parseChar('(')),
+						skipBlanksAndThen(parseChar(')'))
+				);
+	}
+
+	public static Parser<List<TLExpressionNode>> parseInvocationArgumentList() {
+		return parseExpression()
 				.sepBy(skipBlanksAndThen(parseChar(',')))
 				.surroundedBy(
 						skipBlanksAndThen(parseChar('(')),
@@ -63,16 +75,11 @@ public class TLParser {
 	}
 
 	public static Parser<TLExpressionNode> parseInvocation() {
-		return parseIdentifier()
-				.andThen(identifier ->
-						parseExpression()
-								.sepBy(skipBlanksAndThen(parseChar(',')))
-								.surroundedBy(
-										skipBlanksAndThen(parseChar('(')),
-										skipBlanksAndThen(parseChar(')'))
-								)
-								.andThen(arguments -> pure(new TLInvokeNode(null,arguments))) // TODO that null
-				);
+		return parseIdentifier().andThen(identifier ->
+				getSymbol(identifier,TLFunction.class).andThen(function ->
+						parseInvocationArgumentList()
+								.andThen(arguments -> pure(new TLInvokeNode(function, arguments)))
+				));
 	}
 
 	public static Parser<TLExpressionNode> parseVariableOccurrence() {

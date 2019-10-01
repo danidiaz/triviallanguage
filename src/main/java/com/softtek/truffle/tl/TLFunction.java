@@ -20,6 +20,10 @@ public class TLFunction extends TLNode {
 		this.body = body;
 	}
 
+	public String getName() {
+		return name;
+	}
+
 	@Override
 	public String toString() {
 		return new StringJoiner(", ", TLFunction.class.getSimpleName() + "[", "]")
