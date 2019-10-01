@@ -25,9 +25,12 @@ public final class Parser<T> {
     @FunctionalInterface
     private interface ParseFunction<X> {
         /**
-         * @param symbols A symbol table in which top-level definitions can be declared. Values are {@link Object}s
+         * @param symbols <p>A symbol table in which top-level definitions can be registered. Values are {@link Object}s
          *                instead of some generic type because the generic type would complicate the
-         *                {@link Parser} interface and worsen type inference.
+         *                {@link Parser} interface and worsen type inference.</p>
+         *
+         *                <p>Parser actions which <i>register</i> symbols in the table should never be part of a
+         *                backtrack. See {@link #orElse(Parser)}.</p>
          * @param cs      A {@link CharSequence} containing the text that must be parsed.
          * @param offset  The position in the {@link CharSequence} from which to start the parse.
          * @return The result of the parse.
@@ -72,7 +75,7 @@ public final class Parser<T> {
             if (!desiredClass.isInstance(value)) {
                 throw new ParseException(String.format("Value belongs to unexpected class %s.", desiredClass));
             }
-            return new ParseResult<T>(desiredClass.cast(value), offset);
+            return new ParseResult<>(desiredClass.cast(value), offset);
         });
     }
 
@@ -178,7 +181,7 @@ public final class Parser<T> {
                     break;
                 }
             }
-            return new ParseResult<Void>(null, index);
+            return new ParseResult<>(null, index);
         });
     }
 
@@ -198,7 +201,7 @@ public final class Parser<T> {
             if (cs.charAt(offset) != c) {
                 throw new ParseException(String.format("Could not parse char %c", c));
             }
-            return new ParseResult<Void>(null, offset + 1);
+            return new ParseResult<>(null, offset + 1);
         });
     }
 
@@ -214,7 +217,7 @@ public final class Parser<T> {
                     throw new ParseException("Could not parse keyword.");
                 }
             }
-            return new ParseResult<Void>(null, index);
+            return new ParseResult<>(null, index);
         }));
     }
 
@@ -229,7 +232,7 @@ public final class Parser<T> {
             if (index == offset) {
                 throw new ParseException("Identifier excepted");
             }
-            return new ParseResult<CharSequence>(cs.subSequence(offset, index), index);
+            return new ParseResult<>(cs.subSequence(offset, index), index);
         }));
     }
 
@@ -250,7 +253,7 @@ public final class Parser<T> {
             if (cs.charAt(index) != '\'') {
                 throw new ParseException("Could not find closing quote.");
             }
-            return new ParseResult<CharSequence>(cs.subSequence(offset + 1, index), index + 1);
+            return new ParseResult<>(cs.subSequence(offset + 1, index), index + 1);
         }));
     }
 
@@ -266,7 +269,7 @@ public final class Parser<T> {
                 throw new ParseException("Could not find starting digit.");
             }
             final Integer parsedInteger = Integer.parseInt(cs.subSequence(offset, index).toString());
-            return new ParseResult<Integer>(parsedInteger, index);
+            return new ParseResult<>(parsedInteger, index);
         }));
     }
 
