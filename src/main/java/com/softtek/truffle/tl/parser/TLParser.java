@@ -25,8 +25,8 @@ public class TLParser {
                 .andThen(functionName ->
                     parseArgumentList()
                         .andThen(arguments ->
-                            parseFunctionBody().
-                                andThen(body ->
+                            parseFunctionBody()
+                                .andThen(body ->
                                     pure((startPos, endPos) ->
                                         new TLFunction(
                                             startPos,
