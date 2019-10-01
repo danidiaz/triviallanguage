@@ -10,6 +10,8 @@ import java.util.function.Function;
 /**
  * <p>A rudimentary parser combinator library.</p>
  *
+ * <p>This class is independent of Truffle's infrastructure.</p>
+ *
  * @param <T> The result type of the parser.
  */
 public final class Parser<T> {
