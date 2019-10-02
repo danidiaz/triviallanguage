@@ -1,4 +1,6 @@
-package com.softtek.truffle.tl;
+package com.softtek.truffle.tl.nodes;
+
+import com.softtek.truffle.tl.runtime.TLFunction;
 
 import java.util.List;
 

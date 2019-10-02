@@ -1,6 +1,7 @@
 package com.softtek.truffle.tl.parser;
 
-import com.softtek.truffle.tl.*;
+import com.softtek.truffle.tl.nodes.*;
+import com.softtek.truffle.tl.runtime.TLFunction;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -9,7 +10,7 @@ import java.util.stream.Collectors;
 
 import static com.softtek.truffle.tl.parser.Parser.*;
 
-public class TLParser {
+public class TrivialLanguageParser {
 
     public static Parser<List<TLFunction>> parseAllTopLevelFunctions() {
         return parseTopLevelFunction()
@@ -75,11 +76,13 @@ public class TLParser {
     }
 
     public static Parser<TLExpressionNode> parseInvocation() {
-        return parseIdentifier().andThen(identifier ->
-            getSymbol(identifier, TLFunction.class).andThen(function ->
-                parseInvocationArgumentList()
-                    .andThen(arguments -> pure(new TLInvokeNode(function, arguments)))
-            ));
+        return parseIdentifier()
+            .andThen(identifier ->
+                getSymbol(identifier, TLFunction.class)
+                    .andThen(function ->
+                        parseInvocationArgumentList()
+                            .andThen(arguments -> pure(new TLInvokeNode(function, arguments)))
+                    ));
     }
 
     public static Parser<TLExpressionNode> parseVariableOccurrence() {

@@ -1,4 +1,7 @@
-package com.softtek.truffle.tl;
+package com.softtek.truffle.tl.runtime;
+
+import com.softtek.truffle.tl.nodes.TLExpressionNode;
+import com.softtek.truffle.tl.nodes.TLNode;
 
 import java.util.List;
 import java.util.StringJoiner;

@@ -38,7 +38,7 @@ public final class Parser<T> {
         ParseResult<X> apply(Map<String, Object> symbols, CharSequence cs, Integer offset);
     }
 
-    private ParseFunction<T> parseFunction;
+    private final ParseFunction<T> parseFunction;
 
     private static <T> Parser<T> from(ParseFunction<T> parseFunction) {
         return new Parser<T>(parseFunction);
