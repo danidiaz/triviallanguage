@@ -1,7 +1,7 @@
 # TODO
 
 - Rework analogue of [SLFunction](https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/runtime/SLFunction.java)?
-- Add analogue of [SLRootNode](https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/SLRootNode.java)
+- Add analogue of [SLRootNode](https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/SLRootNode.java). Do I need an SLEvalRootNode as well?
 - Add analogue of [SLFunctionBodyNode](https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLFunctionBodyNode.java) (but maybe not necessary in our case? We don't have to catch control flow exceptions...)
 - Add analogue of [SLInvokeNode](https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/nodes/expression/SLInvokeNode.java)
 
